@@ -1,14 +1,21 @@
 #!/usr/bin/env node
-// Renders the D32 motion reel. Headless Chromium draws each frame (with
+// Renders the D32 motion pieces. Headless Chromium draws each frame (with
 // sub-frame motion blur) and ffmpeg encodes the PNG stream plus the
 // soundtrack, which is synthesised offline by the same page.
 //
-//   node render.mjs                         full render → ../D32_Motion_Reel.mp4
+//   node render.mjs                         the reel → ../D32_Motion_Reel.mp4
+//   node render.mjs --page sting.html --out ../D32_Logo_Sting.mp4
+//   node render.mjs --page sting.html --size 1080x1920 --out ../D32_Logo_Sting_Vertical.mp4
 //   node render.mjs --stills 0.5,2.5 --out dir
 //   node render.mjs --from 2 --to 4 --out clip.mp4
 //
-// Options: --fps 60  --samples 12  --workers 4  --crf 16  --no-audio
+// Options: --page index.html  --size 1920x1080  --fps 60  --samples 12
+//          --workers 4  --crf 16  --no-audio
 //          --ffmpeg /path/to/ffmpeg   (or env FFMPEG; defaults to `ffmpeg`)
+//
+// A page is renderable when, opened with ?capture, it sets window.ready and
+// provides window.DURATION, window.renderAt(t, samples) → PNG data URL and
+// window.renderAudioWav() → base64 WAV.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -35,6 +42,8 @@ const nWorkers = Number(opt('workers', 4));
 const crf = Number(opt('crf', 16));
 const ffmpeg = opt('ffmpeg', process.env.FFMPEG || 'ffmpeg');
 const stills = opt('stills', null);
+const pageFile = opt('page', 'index.html');
+const [width, height] = opt('size', '1920x1080').split('x').map(Number);
 
 // ── static server for the page and its fonts ──────────────────────────────
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2' };
@@ -50,13 +59,13 @@ const server = http.createServer((req, res) => {
 });
 server.listen(0, '127.0.0.1');
 await once(server, 'listening');
-const url = `http://127.0.0.1:${server.address().port}/index.html?capture`;
+const url = `http://127.0.0.1:${server.address().port}/${pageFile}?capture&w=${width}&h=${height}`;
 
 const browser = await chromium.launch({
   args: ['--force-color-profile=srgb', '--font-render-hinting=none', '--disable-lcd-text'],
 });
 async function worker() {
-  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
   page.on('pageerror', e => console.error('[page error]', e));
   page.on('console', m => { if (m.type() === 'error') console.error('[page]', m.text()); });
   await page.goto(url);
@@ -79,7 +88,7 @@ try {
       console.log(file);
     }
   } else {
-    const duration = await (await worker()).evaluate(() => D32.DURATION);
+    const duration = await (await worker()).evaluate(() => window.DURATION);
     const from = Number(opt('from', 0)), to = Number(opt('to', duration));
     const out = path.resolve(opt('out', path.join(here, '..', 'D32_Motion_Reel.mp4')));
     const pages = await Promise.all(Array.from({ length: nWorkers }, worker));

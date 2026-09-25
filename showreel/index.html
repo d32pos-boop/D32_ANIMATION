@@ -39,6 +39,7 @@
   if (capture) {
     // Driven by render.mjs: one call per frame, returns a lossless PNG.
     document.body.classList.add('capture');
+    window.DURATION = D32.DURATION;
     window.renderAt = (t, samples) => {
       D32.renderFrame(ctx, t, { samples });
       return canvas.toDataURL('image/png');
