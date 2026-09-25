@@ -31,6 +31,24 @@ The logo is complete at 0.8s, so the sting can be trimmed anywhere after about 2
 
 Source: `sting.js`, `sting-audio.js`, `sting.html`.
 
+## Hit the Mark
+
+A 5-second ident built on three ideas, each one already present in the logo's geometry:
+
+- [`../D32_Hit_The_Mark.mp4`](../D32_Hit_The_Mark.mp4) (1920×1080) and [`../D32_Hit_The_Mark_Vertical.mp4`](../D32_Hit_The_Mark_Vertical.mp4) (1080×1920) carry the captions "HIT THE MARK", "GROW" and "THINK OUTSIDE THE BOX".
+- `…_Clean` versions of both skip the captions and go straight to the wordmark.
+
+| Time | Idea | What happens |
+| --- | --- | --- |
+| 0.0–0.75s | Hit the mark | A square target draws onto the logo's grid. Its outer ring is the 2×2 box of cells and its crosshair the lines between them. The arrowhead flies in and sticks dead centre, at the one point where the D, 3 and 2 meet. |
+| 1.0–1.75s | Growth | The logo is a scaled copy of itself anchored at the arrow's tip, so it grows out of the hit in steps. |
+| 1.75–2.6s | Outside the box | At full size the D and 3 fill the box exactly. The 2 cube punches the box's corner off and lands outside it, then a tilt shows it standing out in 3D. |
+| 3.0–5.0s | | Wordmark, glint, hold. |
+
+The sound follows the same story: a scope locks on, then the arrow thwacks into the target. The growth climbs D, F#, A, D, one note per step. On the breakout the chord becomes Dadd9, whose E is the note outside the triad's box.
+
+Source: `mark.js`, `mark-audio.js`, `mark.html` (`?words=1` for captions).
+
 ## How it's made
 
 - `engine.js` is a deterministic 2.5D renderer. Each frame is a pure function of time. It has:
@@ -52,14 +70,15 @@ Requirements:
 node showreel/render.mjs --ffmpeg /path/to/ffmpeg                  # the reel
 node showreel/render.mjs --page sting.html --out D32_Logo_Sting.mp4
 node showreel/render.mjs --page sting.html --size 1080x1920 --out D32_Logo_Sting_Vertical.mp4
+node showreel/render.mjs --page mark.html --query words=1 --out D32_Hit_The_Mark.mp4
 node showreel/render.mjs --stills 3.2,7.6,16.5 --out /tmp/stills   # frames to check
 node showreel/render.mjs --from 6 --to 10 --out /tmp/clip.mp4      # a section
 ```
 
-Options: `--page index.html`, `--size 1920x1080`, `--samples 16` (motion-blur samples), `--workers 4`, `--crf 16`, `--no-audio`.
+Options: `--page index.html`, `--size 1920x1080`, `--query words=1`, `--samples 16` (motion-blur samples), `--workers 4`, `--crf 16`, `--no-audio`.
 
 ## Preview live
 
-Serve this folder, for example with `npx serve showreel`, and open `index.html`. Click to play with sound, press space to pause, and use ← / → to scrub a frame at a time (hold shift to move 15 frames). `sting.html` plays the sting on click; add `?w=1080&h=1920` for the vertical cut.
+Serve this folder, for example with `npx serve showreel`, and open `index.html`. Click to play with sound, press space to pause, and use ← / → to scrub a frame at a time (hold shift to move 15 frames). `sting.html` and `mark.html` play the stings on click; add `?w=1080&h=1920` for the vertical cut and, on `mark.html`, `?words=1` for the captions.
 
 Fonts: JetBrains Mono and Space Grotesk, under the SIL Open Font License (see `fonts/`).

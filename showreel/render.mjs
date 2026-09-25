@@ -6,10 +6,11 @@
 //   node render.mjs                         the reel → ../D32_Motion_Reel.mp4
 //   node render.mjs --page sting.html --out ../D32_Logo_Sting.mp4
 //   node render.mjs --page sting.html --size 1080x1920 --out ../D32_Logo_Sting_Vertical.mp4
+//   node render.mjs --page mark.html --query words=1 --out ../D32_Hit_The_Mark.mp4
 //   node render.mjs --stills 0.5,2.5 --out dir
 //   node render.mjs --from 2 --to 4 --out clip.mp4
 //
-// Options: --page index.html  --size 1920x1080  --fps 60  --samples 12
+// Options: --page index.html  --size 1920x1080  --query k=v&k=v  --fps 60  --samples 12
 //          --workers 4  --crf 16  --no-audio
 //          --ffmpeg /path/to/ffmpeg   (or env FFMPEG; defaults to `ffmpeg`)
 //
@@ -44,6 +45,7 @@ const ffmpeg = opt('ffmpeg', process.env.FFMPEG || 'ffmpeg');
 const stills = opt('stills', null);
 const pageFile = opt('page', 'index.html');
 const [width, height] = opt('size', '1920x1080').split('x').map(Number);
+const query = opt('query', '');
 
 // ── static server for the page and its fonts ──────────────────────────────
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2' };
@@ -59,7 +61,7 @@ const server = http.createServer((req, res) => {
 });
 server.listen(0, '127.0.0.1');
 await once(server, 'listening');
-const url = `http://127.0.0.1:${server.address().port}/${pageFile}?capture&w=${width}&h=${height}`;
+const url = `http://127.0.0.1:${server.address().port}/${pageFile}?capture&w=${width}&h=${height}${query ? `&${query}` : ''}`;
 
 const browser = await chromium.launch({
   args: ['--force-color-profile=srgb', '--font-render-hinting=none', '--disable-lcd-text'],

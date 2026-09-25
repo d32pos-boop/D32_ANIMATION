@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>D32 Hit the Mark</title>
+<style>
+  @font-face { font-family: 'JetBrains Mono'; font-weight: 700; src: url(fonts/jetbrains-mono-latin-700-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Space Grotesk'; font-weight: 700; src: url(fonts/space-grotesk-latin-700-normal.woff2) format('woff2'); }
+  html, body { margin: 0; height: 100%; background: #040404; }
+  body { display: grid; place-items: center; }
+  canvas { display: block; max-width: 100vw; max-height: 100vh; cursor: pointer; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script src="mark.js"></script>
+<script src="mark-audio.js"></script>
+<script>
+(async () => {
+  // ?w=1080&h=1920 for the vertical cut, ?words=1 for the captioned cut,
+  // ?capture hands control to render.mjs
+  const q = new URLSearchParams(location.search);
+  const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+  canvas.width = Number(q.get('w') || 1920);
+  canvas.height = Number(q.get('h') || 1080);
+  D32Mark.setup(canvas.width, canvas.height, { words: q.get('words') === '1' });
+  await Promise.all([
+    document.fonts.load('700 40px "JetBrains Mono"'),
+    document.fonts.load('700 60px "Space Grotesk"'),
+  ]);
+
+  if (q.has('capture')) {
+    window.DURATION = D32Mark.DURATION;
+    window.renderAt = (t, samples) => {
+      D32Mark.renderFrame(ctx, t, { samples });
+      return canvas.toDataURL('image/png');
+    };
+    window.renderAudioWav = () => D32MarkAudio.renderWavBase64();
+    window.ready = true;
+    return;
+  }
+
+  // preview: click to play with sound; it loops
+  let buffer = null, ac = null, start = 0, playing = false;
+  const draw = t => D32Mark.renderFrame(ctx, t, { samples: 2 });
+  const loop = () => {
+    if (!playing) return;
+    const t = ac.currentTime - start;
+    if (t >= D32Mark.DURATION) { play(); return; }
+    draw(t);
+    requestAnimationFrame(loop);
+  };
+  const play = async () => {
+    ac = ac || new AudioContext({ sampleRate: 48000 });
+    buffer = buffer || await D32MarkAudio.render();
+    const src = ac.createBufferSource();
+    src.buffer = buffer;
+    src.connect(ac.destination);
+    start = ac.currentTime + 0.05;
+    src.start(start);
+    playing = true;
+    requestAnimationFrame(loop);
+  };
+  canvas.addEventListener('click', () => { if (!playing) play(); });
+  draw(D32Mark.DURATION);
+})();
+</script>
+</body>
+</html>
