@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>D32 Motion Reel</title>
+<style>
+  @font-face { font-family: 'JetBrains Mono'; font-weight: 500; src: url(fonts/jetbrains-mono-latin-500-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'JetBrains Mono'; font-weight: 700; src: url(fonts/jetbrains-mono-latin-700-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Space Grotesk'; font-weight: 700; src: url(fonts/space-grotesk-latin-700-normal.woff2) format('woff2'); }
+  :root { --ink: #040404; --peri: #8B91E3; --lav: #EDEAF6; }
+  html, body { margin: 0; height: 100%; background: var(--ink); color: var(--lav); }
+  body { display: grid; place-items: center; font: 500 13px/1.4 'JetBrains Mono', monospace; letter-spacing: .08em; }
+  canvas { display: block; width: min(100vw, 177.78vh); aspect-ratio: 16 / 9; cursor: pointer; }
+  #bar { position: fixed; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(139,145,227,.25); }
+  #bar i { display: block; height: 100%; width: 0; background: var(--peri); }
+  #hint { position: fixed; bottom: 14px; left: 0; right: 0; text-align: center; opacity: .7; pointer-events: none; }
+  body.capture #bar, body.capture #hint { display: none; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div id="bar"><i></i></div>
+<div id="hint">CLICK TO PLAY · SPACE PAUSE · ← → SCRUB</div>
+<script src="engine.js"></script>
+<script src="audio.js"></script>
+<script>
+(async () => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const params = new URLSearchParams(location.search);
+  const capture = params.has('capture');
+  await Promise.all([
+    document.fonts.load('500 16px "JetBrains Mono"'),
+    document.fonts.load('700 16px "JetBrains Mono"'),
+    document.fonts.load('700 40px "Space Grotesk"'),
+  ]);
+
+  if (capture) {
+    // Driven by render.mjs: one call per frame, returns a lossless PNG.
+    document.body.classList.add('capture');
+    window.renderAt = (t, samples) => {
+      D32.renderFrame(ctx, t, { samples });
+      return canvas.toDataURL('image/png');
+    };
+    window.renderAudioWav = async () => D32Audio.renderWavBase64();
+    window.ready = true;
+    return;
+  }
+
+  // ── preview player ──────────────────────────────────────────────────
+  const bar = document.querySelector('#bar i'), hint = document.getElementById('hint');
+  let playing = false, t = Number(params.get('t') || 0), last = 0, ac = null, buffer = null, src = null;
+  const draw = () => {
+    D32.renderFrame(ctx, t, { samples: Number(params.get('mb') || 2) });
+    bar.style.width = `${(t / D32.DURATION) * 100}%`;
+  };
+  const stopAudio = () => { if (src) { try { src.stop(); } catch (e) {} src = null; } };
+  const startAudio = () => {
+    if (!buffer) return;
+    stopAudio();
+    src = ac.createBufferSource();
+    src.buffer = buffer;
+    src.connect(ac.destination);
+    src.start(0, t);
+  };
+  const loop = now => {
+    if (!playing) return;
+    t += (now - last) / 1000;
+    last = now;
+    if (t >= D32.DURATION) { t = 0; startAudio(); }
+    draw();
+    requestAnimationFrame(loop);
+  };
+  const play = async () => {
+    if (!ac) {
+      ac = new AudioContext({ sampleRate: 48000 });
+      hint.textContent = 'RENDERING SOUND…';
+      buffer = await D32Audio.render();
+    }
+    hint.style.display = 'none';
+    playing = true;
+    last = performance.now();
+    startAudio();
+    requestAnimationFrame(loop);
+  };
+  const pause = () => { playing = false; stopAudio(); };
+  canvas.addEventListener('click', () => (playing ? pause() : play()));
+  addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') {
+      t = Math.min(D32.DURATION, Math.max(0, t + (e.code === 'ArrowRight' ? 1 : -1) / D32.FPS * (e.shiftKey ? 15 : 1)));
+      if (playing) startAudio(); else draw();
+    }
+  });
+  draw();
+})();
+</script>
+</body>
+</html>
