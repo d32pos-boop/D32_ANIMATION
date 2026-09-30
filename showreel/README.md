@@ -57,7 +57,7 @@ Source: `mark.js`, `mark-audio.js`, `mark.html` (`?words=1` for captions).
   - motion blur from sub-frames averaged over a 180° shutter
   - chromatic aberration, shake and HUD
 - `audio.js` holds the soundtrack: drums, bass, pads, plucks and sound design, synthesised with an `OfflineAudioContext` and read from the same cue list as the picture, so every hit lands on its frame. It runs at 120 BPM in A minor.
-- `render.mjs` drives headless Chromium frame by frame and pipes lossless PNGs to ffmpeg (H.264, BT.709 tagged so the brand colours hold). It renders any page that follows its capture protocol, at any size.
+- `render.mjs` drives headless Chromium frame by frame and pipes lossless PNGs to ffmpeg (H.264, BT.709 tagged so the brand colours hold). It renders any page that follows its capture protocol, at any size and from any folder (`--root`). The Darta logo animations in [`../darta`](../darta) render through it too.
 
 ## Render it
 

@@ -7,10 +7,12 @@
 //   node render.mjs --page sting.html --out ../D32_Logo_Sting.mp4
 //   node render.mjs --page sting.html --size 1080x1920 --out ../D32_Logo_Sting_Vertical.mp4
 //   node render.mjs --page mark.html --query words=1 --out ../D32_Hit_The_Mark.mp4
+//   node render.mjs --root ../darta --query opt=2 --out ../Darta_2_Redact.mp4
 //   node render.mjs --stills 0.5,2.5 --out dir
 //   node render.mjs --from 2 --to 4 --out clip.mp4
 //
-// Options: --page index.html  --size 1920x1080  --query k=v&k=v  --fps 60  --samples 12
+// Options: --root <dir to serve>  --page index.html  --size 1920x1080  --query k=v&k=v
+//          --fps 60  --samples 12
 //          --workers 4  --crf 16  --no-audio
 //          --ffmpeg /path/to/ffmpeg   (or env FFMPEG; defaults to `ffmpeg`)
 //
@@ -46,12 +48,13 @@ const stills = opt('stills', null);
 const pageFile = opt('page', 'index.html');
 const [width, height] = opt('size', '1920x1080').split('x').map(Number);
 const query = opt('query', '');
+const served = path.resolve(opt('root', here));
 
 // ── static server for the page and its fonts ──────────────────────────────
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2' };
 const server = http.createServer((req, res) => {
-  const p = path.join(here, decodeURIComponent(new URL(req.url, 'http://x').pathname));
-  if (!p.startsWith(here) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) {
+  const p = path.join(served, decodeURIComponent(new URL(req.url, 'http://x').pathname));
+  if (!p.startsWith(served) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) {
     res.writeHead(404);
     res.end();
     return;
