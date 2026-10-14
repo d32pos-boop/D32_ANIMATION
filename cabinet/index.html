@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sam's Secret Files</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=IBM+Plex+Mono:wght@500&family=Inter:wght@400;500&display=swap">
+<style>
+  html, body { margin: 0; background: #DEDEDE; color: #111; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 16px 40px; }
+</style>
+</head>
+<body>
+<main>
+  <div id="cabinet"></div>
+</main>
+<script src="cabinet.js"></script>
+<script>
+  Cabinet.mount(document.getElementById('cabinet'), { label: "sam's secret files" });
+</script>
+</body>
+</html>
